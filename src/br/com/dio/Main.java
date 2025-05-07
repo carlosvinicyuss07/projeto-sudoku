@@ -6,6 +6,7 @@ import br.com.dio.model.Space;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static br.com.dio.util.BoardTemplate.BOARD_TEMPLATE;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
@@ -106,16 +107,69 @@ public class Main {
         }
     }
 
-    private static void finishGame() {
-    }
+    private static void showCurrentGame() {
+        if (isNull(board)) {
+            System.out.println("O jogo ainda não foi iniciado");
+            return;
+        }
 
-    private static void clearGame() {
+        var args = new Object[81];
+        var argPos = 0;
+        for (int i = 0; i < BOARD_LIMIT; i++) {
+            for (var col : board.getSpaces()) {
+                args[argPos++] = " " + ((isNull(col.get(i).getActual())) ? " " : col.get(i).getActual());
+            }
+        }
+        System.out.println("Seu jogo se encontra da seguinte forma");
+        System.out.printf((BOARD_TEMPLATE) + "\n", args);
     }
 
     private static void showGameStatus() {
+        if (isNull(board)) {
+            System.out.println("O jogo ainda não foi iniciado");
+            return;
+        }
+
+        System.out.printf("O jogo atualmente se encontra no status %s\n", board.getStatus().getLabel());
+        if (board.hasErrors()) {
+            System.out.println("O jogo contém erros");
+        } else {
+            System.out.println("O jogo não contém erros");
+        }
     }
 
-    private static void showCurrentGame() {
+    private static void clearGame() {
+        if (isNull(board)) {
+            System.out.println("O jogo ainda não foi iniciado");
+            return;
+        }
+
+        System.out.println("Tem certeza que deseja limpar seu jogo e perder todo seu progresso?");
+        var confirm = scanner.next();
+        while (!confirm.equalsIgnoreCase("sim") && !confirm.equalsIgnoreCase("não")) {
+            System.out.println("Informe 'sim' ou 'não'");
+            confirm = scanner.next();
+        }
+        if (confirm.equalsIgnoreCase("sim")) {
+            board.reset();
+        }
+    }
+
+    private static void finishGame() {
+        if (isNull(board)) {
+            System.out.println("O jogo ainda não foi iniciado");
+            return;
+        }
+
+        if (board.gameIsFinished()) {
+            System.out.println("Parabéns! Você concluiu o jogo");
+            showCurrentGame();
+            board = null;
+        } else if (board.hasErrors()) {
+            System.out.println("Seu jogo contém erros, verifique seu board e ajuste-o");
+        } else {
+            System.out.println("Você ainda precisa preencher algum espaço");
+        }
     }
 
     private static int runUntilGetValidNumber(final int min, final int max) {
@@ -124,14 +178,14 @@ public class Main {
 
         while (!validInput) {
             try {
-                System.out.printf("Informe um número entre %s e %s\n", min, max);
-                current = scanner.nextInt();
-
                 if (current < min || current > max) {
                     System.out.println("Número fora do intervalo permitido. Tente novamente.");
+                    System.out.printf("Informe um número entre %s e %s\n", min, max);
+                    current = scanner.nextInt();
                 } else {
                     validInput = true;
                 }
+
             } catch (InputMismatchException e) {
                 System.out.println("Entrada inválida! Digite apenas números inteiros.");
             } finally {
